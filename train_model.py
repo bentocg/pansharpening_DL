@@ -167,7 +167,7 @@ def main():
                    }
 
     model = model_defs(args.model_arch)
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.modules.loss.
     optimizer = torch.optim.Adam(model.params(), lr=10E-2, weight_decay=0.1)
     scheduler = lr_scheduler.CosineAnnealingLR(optimizer, len(dataloaders["training"] *
                                                               hyperparameters[hyp_set["batch_size_train"]]))

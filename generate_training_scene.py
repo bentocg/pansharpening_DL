@@ -62,6 +62,8 @@ def generate_training_scene(pan_scene, ms_scene, out_folder):
     :param out
     :return: None
     """
+    # create output folder
+    os.makedirs(out_folder, exist_ok=True)
     # get target resolution from multispectral scene
     with rasterio.open(pan_scene) as src_pan:
         with rasterio.open(ms_scene) as src_ms:

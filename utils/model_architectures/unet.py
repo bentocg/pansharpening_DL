@@ -24,7 +24,7 @@ def get_sfs_idxs(sfs, last=True):
 def conv_bn_relu(in_c, out_c, kernel_size, stride, padding):
     return [
         nn.Conv2d(in_c, out_c, kernel_size=kernel_size, stride=stride, padding=padding),
-        nn.ReLU(),
+        nn.LeakyReLU(inplace=True),
         nn.BatchNorm2d(out_c)]
 
 
