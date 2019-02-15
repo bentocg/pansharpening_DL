@@ -99,7 +99,7 @@ def train_model(model, dataloader, criterion, optimizer, scheduler, num_epochs,
                         preds = model(input_img)
 
                         # get loss
-                        loss = criterion(preds, target_img)
+                        loss = criterion(preds.view(preds.numel()), target_img.view(target_img.numel()))
                         exp_avg_loss = 0.99 * exp_avg_loss + 0.1 * (loss.item / len(preds))
 
                         # update parameters
@@ -167,7 +167,7 @@ def main():
                    }
 
     model = model_defs(args.model_arch)
-    criterion = nn.modules.loss.
+    criterion = nn.SmoothL1Loss()
     optimizer = torch.optim.Adam(model.params(), lr=10E-2, weight_decay=0.1)
     scheduler = lr_scheduler.CosineAnnealingLR(optimizer, len(dataloaders["training"] *
                                                               hyperparameters[hyp_set["batch_size_train"]]))
