@@ -8,13 +8,16 @@ Copyright: 2019-2020
 """
 
 from utils.model_architectures import *
-from utils.dataloaders import *
 
+model_archs = {'U-Net': 224,
+               'DynamicU-Net': 256}
 
-model_archs = {'U-Net': 224}
+model_defs = {'U-Net': UNet(scale=16, n_channels=4, n_classes=3)}
 
-model_defs = {'U-Net': DynamicUnet(encoder=models.resnet34(pretrained=True), n_classes=3)}
-
-hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 64, 'batch_size_val': 8, 'batch_size_test': 64,
-                         'step_size': 1, 'gamma': 0.95, 'epochs': 5, 'num_workers_train': 16, 'num_workers_val': 1}}
-
+hyperparameters = {'A': {'learning_rate': 1E-3, 'batch_size_train': 32, 'batch_size_val': 8, 'batch_size_test': 64,
+                         'step_size': 1, 'gamma': 0.95, 'epochs': 3, 'num_workers_train': 16, 'num_workers_val': 1},
+                   'B': {'learning_rate': 1E-4, 'batch_size_train': 32, 'batch_size_val': 8, 'batch_size_test': 64,
+                         'step_size': 1, 'gamma': 0.95, 'epochs': 3, 'num_workers_train': 16, 'num_workers_val': 1},
+                   'C': {'learning_rate': 1E-5, 'batch_size_train': 32, 'batch_size_val': 8, 'batch_size_test': 64,
+                         'step_size': 1, 'gamma': 0.95, 'epochs': 3, 'num_workers_train': 16, 'num_workers_val': 1}
+                   }

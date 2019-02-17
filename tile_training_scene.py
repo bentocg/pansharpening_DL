@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import rasterio
 from rasterio import windows
+from PIL import Image
 
 
 def parse_args():
@@ -76,12 +77,29 @@ def tile_training_scene(file_pan: str, patch_size: int = 450, stride: float = 1,
             # stack panchromatic (1 channel) and multispectral -- need to extract RGB bands from multispectral
             patch_ms = scn_ms.read(window=window)[[2, 3, 5], :, :]
             patch_merged = np.vstack([patch_ms, patch_pan]).transpose([1, 2, 0])
-            # opencv saves images with a BGR encoding, panchromatic is added as an alpha channel
-            cv2.imwrite(output_filename.format('x', file_pan.split('_')[0], row, col), patch_merged)
 
-            # save ground-truth correspondent
+            # check for IO errors
+            write = False
+            try:
+                Image.fromarray(patch_merged)
+                write = True
+            except IOError:
+                continue
+
             patch_gt = scn_gt.read(window=window)[[2, 3, 5], :, :].transpose([1, 2, 0])
-            cv2.imwrite(output_filename.format('y', file_pan.split('_')[0], row, col), patch_gt)
+            try:
+                Image.fromarray(patch_gt)
+                write = True
+            except IOError:
+                write = False
+                continue
+
+            if write:
+                # opencv saves images with a BGR encoding, panchromatic is added as an alpha channel
+                cv2.imwrite(output_filename.format('x', file_pan.split('_')[0], row, col), patch_merged)
+
+                # save ground-truth correspondent
+                cv2.imwrite(output_filename.format('y', file_pan.split('_')[0], row, col), patch_gt)
 
         else:
             # TODO add support for multispectral patches
