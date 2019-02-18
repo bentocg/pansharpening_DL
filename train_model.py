@@ -24,10 +24,13 @@ def parse_args():
                                                        'dictionary')
     parser.add_argument('--hyp_set', type=str, help='combination of hyperparameters used, must be a member of '
                                                     'hyperparameters dictionary')
-    parser.add_argument('--out_name', type=str,
-                        help='name of output file from training, this name will also be used in '
-                             'subsequent steps of the pipeline')
     parser.add_argument('--models_dir', type=str, default='saved_models', help='folder where the model will be saved')
+    parser.add_argument('--lr', type=float, nargs='?', help='learning rate for training')
+    parser.add_argument('--num_cycles', type=int, nargs='?', help='number of training cycles')
+    parser.add_argument('--num_epochs', type=int, nargs='?', help='number of epochs per training cycle')
+    parser.add_argument('--cycle_mult', type=int, nargs='?', help='multiplier for cycle length from the '
+                                                                  'second cycle onwards')
+    parser.add_argument('--loss_func', type=str, default='MSE')
     return parser.parse_args()
 
 
@@ -42,8 +45,8 @@ def save_checkpoint(filename, state, is_best_loss):
         shutil.copyfile(filename + '.tar', filename + '_best_loss.tar')
 
 
-def train_model(model, dataloader, criterion, optimizer, scheduler, num_epochs,
-                output_name, num_cycles, cycle_mult=2):
+def train_model(model, dataloader, criterion, optimizer, scheduler, num_epochs, loss_name,
+                model_name, models_dir, learning_rate=1E-3, num_cycles=3, cycle_mult=2):
     """
 
     :param model:
@@ -52,14 +55,23 @@ def train_model(model, dataloader, criterion, optimizer, scheduler, num_epochs,
     :param optimizer:
     :param scheduler:
     :param num_epochs:
+    :param loss_name:
+    :param model_name:
+    :param models_dir:
+    :param learning_rate:
     :param num_cycles:
     :return:
     """
+    # set model name and path
+    model_name = f"{model_name}_loss-{loss_name}_lr-{learning_rate}_ep-{num_epochs}_nc-{num_cycles}"
+    model_path = f"{models_dir}/{model_name}"
+    os.makedirs(model_path, exist_ok=True)
+
     # keep track of training time
     since = time.time()
 
     # create summary writer with tensorboardX
-    writer = SummaryWriter(log_dir='./tensorboard_logs/{}_{}'.format(output_name, str(datetime.datetime.now())))
+    writer = SummaryWriter(log_dir='./tensorboard_logs/{}_{}'.format(model_name, str(datetime.datetime.now())))
 
     # keep track of iterations
     global_step = 0
@@ -112,7 +124,7 @@ def train_model(model, dataloader, criterion, optimizer, scheduler, num_epochs,
                         optim_cycle.step()
 
                         # save stats
-                        if iter > 0 and iter % 100 == 0:
+                        if iter > 0 and iter % 500 == 0:
                             writer.add_scalar("training loss", exp_avg_loss, global_step)
                             writer.add_scalar("learning rate", optim_cycle.param_groups[-1]['lr'], global_step)
 
@@ -137,7 +149,7 @@ def train_model(model, dataloader, criterion, optimizer, scheduler, num_epochs,
                 writer.add_scalar("validation loss", epoch_loss, global_step)
                 is_best_loss = epoch_loss < best_loss
                 best_loss = min(epoch_loss, best_loss)
-                save_checkpoint('coco20', model.state_dict(), is_best_loss)
+                save_checkpoint(model_name, model.state_dict(), is_best_loss)
 
     return model
 
@@ -177,20 +189,20 @@ def main():
                    }
 
     model = model_defs[args.model_arch]
-    output_name = args.out_name
-    criterion = nn.SmoothL1Loss()
+    model_name = args.model_arch
+    criterion = loss_functions[args.loss_func]
     optimizer = torch.optim.Adam(model.parameters(), lr=10E-2, weight_decay=0.1)
     scheduler = lr_scheduler.CosineAnnealingLR(optimizer, len(dataloaders["training"]))
 
     if use_gpu:
-        inp = torch.ones(1, 4, 256, 256)
-        out = model(inp.cpu())
         model = model.cuda()
+        model = nn.DataParallel(model)
         criterion = criterion.cuda()
 
     train_model(model=model, dataloader=dataloaders, criterion=criterion,
-                optimizer=optimizer, scheduler=scheduler, num_cycles=3,
-                num_epochs=3, output_name=output_name)
+                optimizer=optimizer, scheduler=scheduler, num_cycles=args.num_cycles,
+                num_epochs=args.num_epochs, model_name=model_name, loss_name=args.loss_func,
+                models_dir=args.models_dir)
 
 
 if __name__ == "__main__":
