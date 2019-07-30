@@ -71,7 +71,7 @@ def train_model(model, dataloader, criterion, optimizer, scheduler, num_epochs, 
     since = time.time()
 
     # create summary writer with tensorboardX
-    writer = SummaryWriter(log_dir='./tensorboard_logs/{}_{}'.format(model_name, str(datetime.datetime.now())))
+    writer = SummaryWriter(log_dir='./tensorboard_logs/{}_{}_{}'.format(model_name, learning_rate, loss_name))
 
     # keep track of iterations
     global_step = 0

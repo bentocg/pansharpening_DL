@@ -4,7 +4,6 @@ from PIL import Image
 
 import os
 import os.path
-import sys
 
 
 def has_file_allowed_extension(filename, extensions):
